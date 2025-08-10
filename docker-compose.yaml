@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+    # apache-srv:
+    #     container_name: apache-srv
+    #     build:
+    #         context: ./apache
+    #         dockerfile: Dockerfile
+    #     networks:
+    #         - bpublic
+    #     ports:
+    #         - "8111:80"
+    #         - "9999:443"
+    #     volumes:
+    #         - ./public_html:/var/www/html
+    #         - ./cert:/etc/ssl/apache2/localhost:ro
+    #     depends_on:
+    #         - phpfpm-srv
+    #     restart: "unless_stopped"
+    nginx-srv:
+        container_name: nginx-srv
+        build:
+            context: ./nginx
+            dockerfile: Dockerfile
+        networks:
+            - bpublic
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./public_html:/var/www/html
+            - ./cert:/etc/ssl/nginx/localhost:ro
+        depends_on:
+            - phpfpm-srv
+        restart: unless-stopped
+    phpfpm-srv:
+        container_name: phpfpm-srv
+        build:
+            context: ./phpfpm
+            dockerfile: Dockerfile
+        networks:
+            - bpublic
+            - bprivate
+        volumes:
+            - ./public_html:/var/www/html
+        environment:
+            - DB_HOST_CONTAINER_NAME_WP=${DB_HOST_CONTAINER_NAME_WP}
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+        restart: unless-stopped
+    nextjs-srv:
+        container_name: nextjs-srv
+        build:
+            context: ./nextjs
+            dockerfile: Dockerfile
+        networks:
+            - bpublic
+            - bprivate
+        volumes:
+            - ./nextjs/demo-page:/app
+        restart: unless-stopped
+    db:
+        container_name: ${DB_HOST_CONTAINER_NAME_WP}
+        build:
+            context: ./mariadb
+            dockerfile: Dockerfile
+        networks:
+            - bprivate
+        volumes:
+            - ./database/wp_database:/var/lib/mysql
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+        restart: always
+volumes:
+    fpmvol:
+networks:
+    bpublic:
+        driver: bridge
+    bprivate:
+        driver: bridge
