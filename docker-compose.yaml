@@ -61,7 +61,7 @@ services:
         volumes:
             - ./nextjs/demo-page:/app
         restart: unless-stopped
-    db:
+    wpdb-srv:
         container_name: ${DB_HOST_CONTAINER_NAME_WP}
         build:
             context: ./mariadb
